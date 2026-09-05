@@ -1,0 +1,56 @@
+name: Build Camera Magisk Module
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Create Magisk Module Structure
+        run: |
+          # إنشاء هيكل الموديول الأساسي
+          mkdir -p module/system/priv-app/MiuiCamera
+          
+          # تحميل ملف الـ APK المباشر الذي أرفقته
+          echo "Downloading APK..."
+          curl -L "https://www.apkmirror.com/wp-content/themes/APKMirror/download.php?id=9519439&key=d3db59c24e22ccc545791aa159abbfd6c57a24f6" -o module/system/priv-app/MiuiCamera/MiuiCamera.apk
+          
+          # إنشاء ملف module.prop الأساسي للموديول
+          cat << EOF > module/module.prop
+          id=miui_camera_redmi14c
+          name=MiuiCamera Port for Redmi 14C GSI
+          version=1.0
+          versionCode=1
+          author=Hussain
+          description=MiuiCamera packaged as a Magisk/KernelSU module for GSI ROMs
+          EOF
+
+          # إنشاء ملف customize.sh لمنح الصلاحيات الصحيحة للملفات داخل النظام
+          cat << EOF > module/customize.sh
+          SKIPUNZIP=0
+          ui_print "***********************************"
+          ui_print "   Installing MiuiCamera Module    "
+          ui_print "***********************************"
+          set_perm_recursive \$MODPATH/system 0 0 0755 0644
+          set_perm_recursive \$MODPATH/system/priv-app 0 0 0755 0755
+          ui_print "Installation finished. Rebooting recommended!"
+          EOF
+          chmod +x module/customize.sh
+
+      - name: Zip Module
+        run: |
+          cd module
+          zip -r ../MiuiCamera-Redmi14C-Signed.zip .
+          cd ..
+          mkdir -p output
+          mv MiuiCamera-Redmi14C-Signed.zip output/
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MiuiCamera-Magisk-Module
+          path: output/*.zip
