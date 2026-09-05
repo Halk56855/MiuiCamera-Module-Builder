@@ -1,12 +1,7 @@
-name: Build GCam / Camera System Module
+name: Build MGC GCam System Module
 
 on:
   workflow_dispatch:
-    inputs:
-      apk_url:
-        description: 'Direct Download Link for the APK file'
-        required: true
-        default: 'رابط_الـ_APK_هنا'
 
 jobs:
   build:
@@ -15,34 +10,30 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Module Directory & Download APK
+      - name: Setup Module & Download MGC APK
         run: |
-          # إنشاء الهيكل الصحيح لموديول نظام مخصص
           mkdir -p module/system/priv-app/GCamSystem
           
-          # تحميل ملف الـ APK المُدخل تلقائياً
-          echo "Downloading APK from provided link..."
-          curl -L "${{ github.event.inputs.apk_url }}" -o module/system/priv-app/GCamSystem/GCamSystem.apk
+          echo "Downloading MGC 9.6 APK..."
+          curl -L "https://1-dontsharethislink.celsoazevedo.com/file/filesc/MGC_9.6.080_V47_MGC.apk" -o module/system/priv-app/GCamSystem/GCamSystem.apk
           
-          # إنشاء ملف module.prop الخاص بتعريف الموديول
           cat << EOF > module/module.prop
-          id=gcam_system_module
-          name=GCam System-Wide Module Port
-          version=3.0
-          versionCode=3
+          id=mgc_gcam_system_module
+          name=MGC 9.6 GCam System Port
+          version=1.0
+          versionCode=1
           author=Hussain
-          description=Converts any camera APK into a system-wide KernelSU/Magisk module
+          description=MGC 9.6.080 packaged as a system-wide KernelSU module
           EOF
 
-          # إنشاء ملف customize.sh لمنح صلاحيات النظام الصحيحة
           cat << EOF > module/customize.sh
           SKIPUNZIP=0
           ui_print "----------------------------------"
-          ui_print "   Flashing Camera System Module  "
+          ui_print "   Flashing MGC GCam System Port  "
           ui_print "----------------------------------"
           set_perm_recursive \$MODPATH/system 0 0 0755 0644
           set_perm_recursive \$MODPATH/system/priv-app 0 0 0755 0755
-          ui_print "Permissions applied successfully!"
+          ui_print "Installation finished successfully!"
           ui_print "Reboot your phone to apply changes."
           EOF
           chmod +x module/customize.sh
@@ -50,13 +41,13 @@ jobs:
       - name: Create Flashable Zip
         run: |
           cd module
-          zip -r ../Camera-System-Module.zip .
+          zip -r ../MGC-GCam-System-Module.zip .
           cd ..
           mkdir -p output
-          mv Camera-System-Module.zip output/
+          mv MGC-GCam-System-Module.zip output/
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Camera-KernelSU-Module
+          name: MGC-GCam-KernelSU-Module
           path: output/*.zip
