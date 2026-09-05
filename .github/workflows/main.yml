@@ -1,7 +1,12 @@
-name: Build MiuiCamera System Module
+name: Build GCam / Camera System Module
 
 on:
   workflow_dispatch:
+    inputs:
+      apk_url:
+        description: 'Direct Download Link for the APK file'
+        required: true
+        default: 'رابط_الـ_APK_هنا'
 
 jobs:
   build:
@@ -10,49 +15,48 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Module Structure
+      - name: Setup Module Directory & Download APK
         run: |
-          # إنشاء الهيكل الأساسي لموديول Magisk/KernelSU
-          mkdir -p module/system/priv-app/MiuiCamera
-          mkdir -p module/system/vendor/lib64
+          # إنشاء الهيكل الصحيح لموديول نظام مخصص
+          mkdir -p module/system/priv-app/GCamSystem
           
-          # تحميل ملف APK الخاص بالكاميرا (يمكنك استبدال الرابط برابط حزمة MiuiCamera المتوافقة مع معالجك)
-          echo "Downloading Camera APK..."
-          curl -L "https://www.apkmirror.com/wp-content/themes/APKMirror/download.php?id=9519439&key=d3db59c24e22ccc545791aa159abbfd6c57a24f6" -o module/system/priv-app/MiuiCamera/MiuiCamera.apk
+          # تحميل ملف الـ APK المُدخل تلقائياً
+          echo "Downloading APK from provided link..."
+          curl -L "${{ github.event.inputs.apk_url }}" -o module/system/priv-app/GCamSystem/GCamSystem.apk
           
-          # إنشاء ملف module.prop
+          # إنشاء ملف module.prop الخاص بتعريف الموديول
           cat << EOF > module/module.prop
-          id=miui_camera_system_port
-          name=MiuiCamera System Port for GSI
-          version=2.0
-          versionCode=2
+          id=gcam_system_module
+          name=GCam System-Wide Module Port
+          version=3.0
+          versionCode=3
           author=Hussain
-          description=MiuiCamera packaged as a system-wide KernelSU module
+          description=Converts any camera APK into a system-wide KernelSU/Magisk module
           EOF
 
-          # إنشاء ملف customize.sh لمنح الصلاحيات الصحيحة لمنع خطأ الـ Archive
+          # إنشاء ملف customize.sh لمنح صلاحيات النظام الصحيحة
           cat << EOF > module/customize.sh
           SKIPUNZIP=0
           ui_print "----------------------------------"
-          ui_print "   Flashing MiuiCamera System Port "
+          ui_print "   Flashing Camera System Module  "
           ui_print "----------------------------------"
           set_perm_recursive \$MODPATH/system 0 0 0755 0644
           set_perm_recursive \$MODPATH/system/priv-app 0 0 0755 0755
           ui_print "Permissions applied successfully!"
-          ui_print "Reboot your phone after installation."
+          ui_print "Reboot your phone to apply changes."
           EOF
           chmod +x module/customize.sh
 
-      - name: Archive to ZIP
+      - name: Create Flashable Zip
         run: |
           cd module
-          zip -r ../MiuiCamera-System-Module.zip .
+          zip -r ../Camera-System-Module.zip .
           cd ..
           mkdir -p output
-          mv MiuiCamera-System-Module.zip output/
+          mv Camera-System-Module.zip output/
 
-      - name: Upload Artifact
+      - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MiuiCamera-KernelSU-Module
+          name: Camera-KernelSU-Module
           path: output/*.zip
